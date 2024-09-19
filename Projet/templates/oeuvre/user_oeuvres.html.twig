@@ -1,0 +1,50 @@
+{# templates/oeuvre/user_oeuvres.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes Œuvres{% endblock %}
+
+{% block body %}
+<div class="container">
+    <h1 class="my-4">Mes Œuvres</h1>
+
+    <h2 class="my-3">Œuvres que j'ai postées</h2>
+    {% if userOeuvres is not empty %}
+        <div class="row">
+            {% for oeuvre in userOeuvres %}
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <img src="{{ asset('images/' ~ oeuvre.image) }}" class="card-img-top" alt="{{ oeuvre.titre }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ oeuvre.titre }}</h5>
+                            <p class="card-text">{{ oeuvre.description|slice(0, 100) }}...</p>
+                            <a href="{{ path('oeuvre_show', { 'id': oeuvre.id }) }}" class="btn btn-primary">Voir l'œuvre</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Aucune œuvre postée.</p>
+    {% endif %}
+
+    <h2 class="my-3">Œuvres que j'ai mises en favoris</h2>
+    {% if favoriteOeuvres is not empty %}
+        <div class="row">
+            {% for favorite in favoriteOeuvres %}
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <img src="{{ asset('images/' ~ favorite.oeuvre.image) }}" class="card-img-top" alt="{{ favorite.oeuvre.titre }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ favorite.oeuvre.titre }}</h5>
+                            <p class="card-text">{{ favorite.oeuvre.description|slice(0, 100) }}...</p>
+                            <a href="{{ path('oeuvre_show', { 'id': favorite.oeuvre.id }) }}" class="btn btn-primary">Voir l'œuvre</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Aucune œuvre mise en favoris.</p>
+    {% endif %}
+</div>
+{% endblock %}

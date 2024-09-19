@@ -1,0 +1,32 @@
+{# templates/oeuvre/index.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Œuvres{% endblock %}
+
+{% block body %}
+<h2>Œuvres récemment postées</h2>
+    <div class="row">
+        {% for oeuvre in oeuvres %}
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="{{ asset('images/' ~ oeuvre.image) }}" class="card-img-top" alt="{{ oeuvre.titre }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ oeuvre.titre }}</h5>
+                        <p class="card-text"><strong>Artiste : </strong>{{ oeuvre.artiste }}</p>
+                        <p class="card-text"><strong>Date de création : </strong>{{ oeuvre.date ? oeuvre.date|date('d/m/Y') : 'Inconnue' }}</p>
+                        <p class="card-text"><strong>Type : </strong>{{ oeuvre.type }}</p>
+                        <p class="card-text"><strong>Technique : </strong>{{ oeuvre.technique }}</p>
+                        <p class="card-text"><strong>Lieu de création : </strong>{{ oeuvre.lieuCreation }}</p>
+                        <p class="card-text"><strong>Dimensions : </strong>{{ oeuvre.dimensions }}</p>
+                        <p class="card-text"><strong>Mouvement : </strong>{{ oeuvre.mouvement }}</p>
+                        <p class="card-text"><strong>Collection : </strong>{{ oeuvre.collection }}</p>
+                        <p class="card-text">{{ oeuvre.description }}</p>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <li>Aucune œuvre trouvée.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
