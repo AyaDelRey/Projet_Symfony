@@ -22,11 +22,24 @@
                         <p class="card-text"><strong>Mouvement : </strong>{{ oeuvre.mouvement }}</p>
                         <p class="card-text"><strong>Collection : </strong>{{ oeuvre.collection }}</p>
                         <p class="card-text">{{ oeuvre.description }}</p>
+
+                        <!-- Bouton Ajouter/Retirer des favoris -->
+                                        {% if oeuvre.id in favoritedOeuvres %}
+                    <!-- Si l'œuvre est déjà en favori, afficher le bouton pour retirer -->
+                    <form action="{{ path('favori_toggle', {id: oeuvre.id}) }}" method="POST">
+                        <button type="submit">Retirer des favoris</button>
+                    </form>
+                {% else %}
+                    <!-- Sinon, afficher le bouton pour ajouter aux favoris -->
+                    <form action="{{ path('favori_toggle', {id: oeuvre.id}) }}" method="POST">
+                        <button type="submit">Ajouter aux favoris</button>
+                    </form>
+                {% endif %}
                     </div>
                 </div>
             </div>
         {% else %}
             <li>Aucune œuvre trouvée.</li>
         {% endfor %}
-    </ul>
+    </div>
 {% endblock %}

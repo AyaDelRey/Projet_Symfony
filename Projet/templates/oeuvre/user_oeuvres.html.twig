@@ -17,7 +17,7 @@
                         <div class="card-body">
                             <h5 class="card-title">{{ oeuvre.titre }}</h5>
                             <p class="card-text">{{ oeuvre.description|slice(0, 100) }}...</p>
-                            <a href="{{ path('oeuvre_show', { 'id': oeuvre.id }) }}" class="btn btn-primary">Voir l'œuvre</a>
+                            <a href="{{ path('app_user_oeuvres', { 'id': oeuvre.id }) }}" class="btn btn-primary">Voir l'œuvre</a>
                         </div>
                     </div>
                 </div>
@@ -33,11 +33,12 @@
             {% for favorite in favoriteOeuvres %}
                 <div class="col-md-4">
                     <div class="card mb-3">
-                        <img src="{{ asset('images/' ~ favorite.oeuvre.image) }}" class="card-img-top" alt="{{ favorite.oeuvre.titre }}">
+                    
+                        <img src="{{ asset('uploads/images/' ~ favorite.oeuvre.image) }}" class="card-img-top" alt="{{ favorite.oeuvre.titre }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ favorite.oeuvre.titre }}</h5>
                             <p class="card-text">{{ favorite.oeuvre.description|slice(0, 100) }}...</p>
-                            <a href="{{ path('oeuvre_show', { 'id': favorite.oeuvre.id }) }}" class="btn btn-primary">Voir l'œuvre</a>
+                            <a href="{{ path('oeuvre_index', { 'id': favorite.oeuvre.id }) }}" class="btn btn-primary">Voir l'œuvre</a>
                         </div>
                     </div>
                 </div>

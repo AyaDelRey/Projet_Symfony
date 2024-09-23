@@ -1,0 +1,18 @@
+{# templates/oeuvre/show.html.twig #}
+
+<h1>{{ oeuvre.title }}</h1>
+<p>{{ oeuvre.description }}</p>
+
+{# Affichage de l'image de l'œuvre #}
+<img src="/uploads/images/{{ oeuvre.image }}" alt="{{ oeuvre.title }}">
+
+{# Bouton pour ajouter ou retirer des favoris #}
+{% if isFavorited %}
+    <form action="{{ path('favori_toggle', {id: oeuvre.id}) }}" method="POST">
+        <button type="submit">Retirer des favoris</button>
+    </form>
+{% else %}
+    <form action="{{ path('favori_toggle', {id: oeuvre.id}) }}" method="POST">
+        <button type="submit">Ajouter aux favoris</button>
+    </form>
+{% endif %}

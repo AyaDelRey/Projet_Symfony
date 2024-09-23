@@ -20,15 +20,27 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 class OeuvreController extends AbstractController
 {
     #[Route('/', name: 'oeuvre_index', methods: ['GET'])]
-    public function index(OeuvreRepository $oeuvreRepository): Response
+    public function index(OeuvreRepository $oeuvreRepository, FavoriteRepository $favoriteRepository): Response
     {
         $oeuvres = $oeuvreRepository->findAll();
-
+        $user = $this->getUser();
+        $favoritedOeuvres = [];
+    
+        if ($user) {
+            // Obtenir toutes les œuvres que l'utilisateur a ajoutées aux favoris
+            $favorites = $favoriteRepository->findBy(['user' => $user]);
+    
+            // Créer une liste des IDs des œuvres favorites
+            foreach ($favorites as $favorite) {
+                $favoritedOeuvres[] = $favorite->getOeuvre()->getId();
+            }
+        }
+    
         return $this->render('oeuvre/index.html.twig', [
             'oeuvres' => $oeuvres,
+            'favoritedOeuvres' => $favoritedOeuvres,  // On passe les œuvres favorites à la vue
         ]);
     }
-
     #[Route('/oeuvre/new', name: 'oeuvre_new')]
     public function new(Request $request, EntityManagerInterface $entityManager, SluggerInterface $slugger, UserInterface $user): Response
     {
@@ -92,4 +104,7 @@ class OeuvreController extends AbstractController
             'favoriteOeuvres' => $favoriteOeuvres,
         ]);
     }
+
 }
+
+
