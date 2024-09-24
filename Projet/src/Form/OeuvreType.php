@@ -22,7 +22,7 @@ class OeuvreType extends AbstractType
             ->add('date')
             ->add('type')
             ->add('technique')
-            ->add('lieuCreation')
+            ->add('lieu_creation')
             ->add('dimensions')
             ->add('mouvement')
             ->add('collection')

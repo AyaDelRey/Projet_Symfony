@@ -1,4 +1,4 @@
-<?php
+<?php // src/Entity/Comment.php
 
 namespace App\Entity;
 
@@ -13,52 +13,71 @@ class Comment
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $content = null;
+    #[ORM\Column(type: 'text')]
+    private ?string $contenu = null;
 
-    #[ORM\ManyToOne(inversedBy: 'Oeuvre')]
-    private ?User $User = null;
+    #[ORM\ManyToOne(targetEntity: Oeuvre::class, inversedBy: 'comments')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Oeuvre $oeuvre = null;
 
-    #[ORM\ManyToOne(inversedBy: 'comments')]
-    private ?Oeuvre $Oeuvre = null;
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
 
+    #[ORM\Column(type: 'datetime')]
+    private ?\DateTimeInterface $createdAt = null;
+
+    // Getters et Setters...
+    
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getContent(): ?string
+    public function getContenu(): ?string
     {
-        return $this->content;
+        return $this->contenu;
     }
 
-    public function setContent(string $content): static
+    public function setContenu(string $contenu): static
     {
-        $this->content = $content;
-
-        return $this;
-    }
-
-    public function getUser(): ?User
-    {
-        return $this->User;
-    }
-
-    public function setUser(?User $User): static
-    {
-        $this->User = $User;
+        $this->contenu = $contenu;
 
         return $this;
     }
 
     public function getOeuvre(): ?Oeuvre
     {
-        return $this->Oeuvre;
+        return $this->oeuvre;
     }
 
-    public function setOeuvre(?Oeuvre $Oeuvre): static
+    public function setOeuvre(?Oeuvre $oeuvre): static
     {
-        $this->Oeuvre = $Oeuvre;
+        $this->oeuvre = $oeuvre;
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->user;
+    }
+
+    public function setUser(?User $user): static
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeInterface $createdAt): static
+    {
+        $this->createdAt = $createdAt;
 
         return $this;
     }

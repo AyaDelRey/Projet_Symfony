@@ -304,7 +304,20 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     return $this->receivedMessages;
 }
+#[ORM\Column(length: 180, unique: true)]
+private ?string $username = null;
 
+public function getUsername(): ?string
+{
+    return $this->username;
+}
+
+public function setUsername(string $username): static
+{
+    $this->username = $username;
+
+    return $this;
+}
 
 
 }

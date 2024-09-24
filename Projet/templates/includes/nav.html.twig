@@ -26,6 +26,8 @@
                     <ul class="nav-item">
                         <li><a class="nav-link" href="{{ path('oeuvre_new') }}">Ajouter Oeuvre</a></li>
                         <li><a href="{{ path('app_user_oeuvres') }}">Mes Œuvres</a></li>
+                        <li><a href="{{ path('message_list') }}">Messages</a></li>
+                        {# <li><a href="{{ path('message_new', { 'recipientId': User.id }) }}">Envoyer un message</a></li> #}
                         <li><a class="nav-link" href="{{ path('app_logout') }}">Déconnexion</a></li>
                     </ul>
                 {% endif %}

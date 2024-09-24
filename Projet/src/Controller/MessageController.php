@@ -1,73 +1,76 @@
 <?php
 
+// src/Controller/MessageController.php
+
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Entity\Message;
 use App\Form\MessageType;
 use App\Repository\UserRepository;
+use App\Repository\MessageRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-
-
-#[Route('/messages')]
 class MessageController extends AbstractController
 {
-    #[Route('/new/{receiverId}', name: 'message_new', methods: ['GET', 'POST'])]
+    #[Route('/message/new/{recipientId}', name: 'message_new')]
     public function new(
         Request $request, 
-        EntityManagerInterface $entityManager, 
         UserRepository $userRepository, 
-        $receiverId
+        EntityManagerInterface $entityManager,  // Injecter l'EntityManager
+        int $recipientId
     ): Response {
+        // Récupérer le destinataire du message
+        $recipient = $userRepository->find($recipientId);
+        if (!$recipient) {
+            throw $this->createNotFoundException('Utilisateur non trouvé.');
+        }
+    
+        // Créer un nouveau message
         $message = new Message();
-        $receiver = $userRepository->find($receiverId);
-        
-        if (!$receiver) {
-            throw $this->createNotFoundException('User not found');
-        }
-
-        // Vérifiez que l'utilisateur est connecté
-        $sender = $this->getUser();
-        if (!$sender) {
-            throw $this->createAccessDeniedException('You must be logged in to send a message.');
-        }
-
-        $message->setSender($sender);
-        $message->setReceiver($receiver);
-
         $form = $this->createForm(MessageType::class, $message);
+    
+        // Gérer la soumission du formulaire
         $form->handleRequest($request);
-
         if ($form->isSubmitted() && $form->isValid()) {
+            $message->setSender($this->getUser());  // L'utilisateur actuel est l'expéditeur
+            $message->setRecipient($recipient);    // Le destinataire est celui trouvé dans l'URL
+    
+            // Sauvegarder le message en base de données
             $entityManager->persist($message);
             $entityManager->flush();
-
+    
+            // Rediriger vers la liste des messages ou une page de succès
             return $this->redirectToRoute('message_list');
         }
-
+    
+        // Afficher le formulaire d'envoi de message
         return $this->render('message/new.html.twig', [
             'form' => $form->createView(),
+            'recipient' => $recipient,  // Transmettre l'utilisateur destinataire à la vue
+        ]);}
+
+    #[Route('/messages', name: 'message_list')]
+    public function list(MessageRepository $messageRepository): Response
+    {
+        // Vérifier que l'utilisateur est bien connecté
+        $user = $this->getUser();
+        if (!$user) {
+            throw $this->createAccessDeniedException('Vous devez être connecté pour voir vos messages.');
+        }
+
+        // Récupérer les messages envoyés et reçus par l'utilisateur
+        $messagesSent = $messageRepository->findBy(['sender' => $user]);
+        $messagesReceived = $messageRepository->findBy(['recipient' => $user]);
+
+        // Afficher la vue avec les messages
+        return $this->render('message/list.html.twig', [
+            'messagesSent' => $messagesSent,
+            'messagesReceived' => $messagesReceived,
         ]);
     }
-
-    //#[Route('/', name: 'message_list', methods: ['GET'])]
-    //public function list(): Response
-    //{
-    //    // Vérifiez que l'utilisateur est connecté
-    //    $user = $this->getUser();
-    //    if (!$user) {
-    //        throw $this->createAccessDeniedException('You must be logged in to view messages.');
-    //    }
-//
-    //    // Assurez-vous que la méthode getReceivedMessages() existe dans l'entité User
-    //    $messages = $user->getReceivedMessages();
-//
-    //    return $this->render('message/list.html.twig', [
-    //        'messages' => $messages,
-    //    ]);
-    //}
 }

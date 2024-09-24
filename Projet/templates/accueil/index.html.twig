@@ -1,40 +1,168 @@
-{# templates/index.html.twig #}
 {% extends 'base.html.twig' %}
 
-{% block title %}Accueil{% endblock %}
-
+{% block title %}Œuvres{% endblock %}
 
 {% block body %}
-{% for message in app.flashes('success') %}
-        <div class="alert alert-success">
-            {{ message }}
-        </div>
-    {% endfor %}
-    <h1>Bienvenue sur le Catalogue</h1>
+<form id="searchForm">
+    <div>
+        <input type="text" name="keyword" placeholder="Rechercher par titre ou description...">
+    </div>
+    <div>
+        <input type="text" name="artiste" placeholder="Rechercher par artiste...">
+    </div>
+    <div>
+        <input type="number" name="year" placeholder="Rechercher par année...">
+    </div>
+    <div>
+        <label for="type">Type</label>
+        <select name="type" id="type">
+            <option value="">Tous les types</option>
+            <option value="peinture">Peinture</option>
+            <option value="sculpture">Sculpture</option>
+            <!-- Ajouter d'autres types -->
+        </select>
+    </div>
+    <div>
+        <label for="technique">Technique</label>
+        <select name="technique" id="technique">
+            <option value="">Toutes les techniques</option>
+            <option value="huile">Huile</option>
+            <option value="aquarelle">Aquarelle</option>
+            <!-- Ajouter d'autres techniques -->
+        </select>
+    </div>
+    <div>
+        <input type="text" name="lieu_creation" placeholder="Rechercher par lieu de création...">
+    </div>
+    <div>
+        <input type="text" name="dimensions" placeholder="Rechercher par dimensions...">
+    </div>
+    <div>
+        <input type="text" name="mouvement" placeholder="Rechercher par mouvement...">
+    </div>
+    <div>
+        <input type="text" name="collection" placeholder="Rechercher par collection...">
+    </div>
+    <div>
+        <button type="submit">Rechercher</button>
+    </div>
+</form>
 
-    <h2>Œuvres récemment postées</h2>
-    <div class="row">
-        {% for oeuvre in oeuvres %}
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <img src="{{ asset('images/' ~ oeuvre.image) }}" class="card-img-top" alt="{{ oeuvre.titre }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ oeuvre.titre }}</h5>
-                        <p class="card-text"><strong>Artiste : </strong>{{ oeuvre.artiste }}</p>
-                        <p class="card-text"><strong>Date de création : </strong>{{ oeuvre.date ? oeuvre.date|date('d/m/Y') : 'Inconnue' }}</p>
-                        <p class="card-text"><strong>Type : </strong>{{ oeuvre.type }}</p>
-                        <p class="card-text"><strong>Technique : </strong>{{ oeuvre.technique }}</p>
-                        <p class="card-text"><strong>Lieu de création : </strong>{{ oeuvre.lieuCreation }}</p>
-                        <p class="card-text"><strong>Dimensions : </strong>{{ oeuvre.dimensions }}</p>
-                        <p class="card-text"><strong>Mouvement : </strong>{{ oeuvre.mouvement }}</p>
-                        <p class="card-text"><strong>Collection : </strong>{{ oeuvre.collection }}</p>
-                        <p class="card-text">{{ oeuvre.description }}</p>
-                    </div>
+<h2>Œuvres</h2>
+<div id="oeuvreList" class="row">
+    {% for oeuvre in oeuvres %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="/uploads/images/{{ oeuvre.image }}" alt="{{ oeuvre.titre }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ oeuvre.titre }}</h5>
+                    <p class="card-text"><strong>Artiste : </strong>{{ oeuvre.artiste }}</p>
+                    <p class="card-text"><strong>Date de création : </strong>{{ oeuvre.date ? oeuvre.date|date('d/m/Y') : 'Inconnue' }}</p>
+                    <p class="card-text"><strong>Type : </strong>{{ oeuvre.type }}</p>
+                    <p class="card-text"><strong>Technique : </strong>{{ oeuvre.technique }}</p>
+                    <p class="card-text"><strong>Lieu de création : </strong>{{ oeuvre.lieuCreation }}</p>
+                    <p class="card-text"><strong>Dimensions : </strong>{{ oeuvre.dimensions }}</p>
+                    <p class="card-text"><strong>Mouvement : </strong>{{ oeuvre.mouvement }}</p>
+                    <p class="card-text"><strong>Collection : </strong>{{ oeuvre.collection }}</p>
+                    <p class="card-text">{{ oeuvre.description }}</p>
+
+                    <h4>Commentaires :</h4>
+                    <ul id="comments-{{ oeuvre.id }}">
+                        {% for comment in oeuvre.getComments() %}
+                            <li>{{ comment.contenu }} - {{ comment.user.username }}</li>
+                        {% else %}
+                            <li>Aucun commentaire pour cette œuvre.</li>
+                        {% endfor %}
+                    </ul>
+
+                    {% if is_granted('IS_AUTHENTICATED_FULLY') %}
+                        <form class="commentForm" data-oeuvre-id="{{ oeuvre.id }}" method="post">
+                            <input type="text" name="content" placeholder="Ajouter un commentaire" required />
+                            <button type="submit">Commenter</button>
+                        </form>
+                    {% endif %}
                 </div>
             </div>
-        {% else %}
-            <p>Aucune œuvre n'a été postée récemment.</p>
-        {% endfor %}
-    </div>
-{% endblock %}
+        </div>
+    {% else %}
+        <p>Aucune œuvre n'a été postée récemment.</p>
+    {% endfor %}
+</div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // AJAX pour la recherche d'œuvres
+    $('#searchForm').on('submit', function(event) {
+        event.preventDefault(); // Empêche le rechargement de la page
+
+        $.ajax({
+            url: '{{ path('oeuvre_index') }}',
+            type: 'GET',
+            data: $(this).serialize(),
+            success: function(data) {
+                $('#oeuvreList').empty(); // Efface les anciennes œuvres
+                if (data.length === 0) {
+                    $('#oeuvreList').append('<p>Aucune œuvre trouvée.</p>');
+                } else {
+                    $.each(data, function(index, oeuvre) {
+                        $('#oeuvreList').append(`
+                            <div class="col-md-4 mb-4">
+                                <div class="card">
+                                    <img src="/uploads/images/${oeuvre.image}" alt="${oeuvre.titre}">
+                                    <div class="card-body">
+                                        <h5 class="card-title">${oeuvre.titre}</h5>
+                                        <p class="card-text"><strong>Artiste : </strong>${oeuvre.artiste}</p>
+                                        <p class="card-text"><strong>Date de création : </strong>${oeuvre.date ? new Date(oeuvre.date).toLocaleDateString() : 'Inconnue'}</p>
+                                        <p class="card-text"><strong>Type : </strong>${oeuvre.type}</p>
+                                        <p class="card-text"><strong>Technique : </strong>${oeuvre.technique}</p>
+                                        <p class="card-text"><strong>Lieu de création : </strong>${oeuvre.lieu_creation}</p>
+                                        <p class="card-text"><strong>Dimensions : </strong>${oeuvre.dimensions}</p>
+                                        <p class="card-text"><strong>Mouvement : </strong>${oeuvre.mouvement}</p>
+                                        <p class="card-text"><strong>Collection : </strong>${oeuvre.collection}</p>
+                                        <p class="card-text">${oeuvre.description}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+                    });
+                }
+            },
+            error: function() {
+                alert('Une erreur est survenue lors de la recherche.');
+            }
+        });
+    });
+
+    // AJAX pour soumettre les commentaires
+    $('.commentForm').on('submit', function(event) {
+        event.preventDefault(); // Empêche le rechargement de la page
+
+        const oeuvreId = $(this).data('oeuvre-id');
+        const content = $(this).find('input[name="content"]').val();
+        
+        $.ajax({
+            url: '{{ path('commentaire_new') }}', // Remplace cette route si nécessaire
+            type: 'POST',
+            data: {
+                oeuvreId: oeuvreId,
+                content: content
+            },
+            success: function(data) {
+                // Ajouter le nouveau commentaire à la liste des commentaires
+                $('#comments-' + oeuvreId).append(`
+                    <li>${data.comment.contenu} - ${data.comment.user.username}</li>
+                `);
+                
+                // Réinitialiser le champ de texte du commentaire
+                $('.commentForm[data-oeuvre-id="' + oeuvreId + '"]').find('input[name="content"]').val('');
+            },
+            error: function() {
+                alert('Une erreur est survenue lors de l\'ajout du commentaire.');
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

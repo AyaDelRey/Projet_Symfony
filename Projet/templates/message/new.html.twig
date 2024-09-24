@@ -1,0 +1,14 @@
+{# templates/message/new.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Envoyer un message{% endblock %}
+
+{% block body %}
+    <h2>Envoyer un message à {{ recipient.username }}</h2>  {# Utilise recipient pour afficher le nom de l'utilisateur #}
+
+    {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit" class="btn btn-primary">Envoyer</button>
+    {{ form_end(form) }}
+{% endblock %}

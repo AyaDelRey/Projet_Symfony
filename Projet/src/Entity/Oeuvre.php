@@ -33,7 +33,7 @@ class Oeuvre
     private ?string $technique = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    private ?string $lieuCreation = null;
+    private ?string $lieu_creation = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $dimensions = null;
@@ -53,7 +53,7 @@ class Oeuvre
     /**
      * @var Collection<int, Comment>
      */
-    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'Oeuvre')]
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'oeuvre')]
     private Collection $comments;
 
     /**
@@ -139,12 +139,12 @@ class Oeuvre
 
     public function getLieuCreation(): ?string
     {
-        return $this->lieuCreation;
+        return $this->lieu_creation;
     }
 
-    public function setLieuCreation(?string $lieuCreation): static
+    public function setLieuCreation(?string $lieu_creation): static
     {
-        $this->lieuCreation = $lieuCreation;
+        $this->lieu_creation = $lieu_creation;
 
         return $this;
     }

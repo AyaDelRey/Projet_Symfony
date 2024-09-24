@@ -85,4 +85,25 @@ class Message
 
         return $this;
     }
+
+        /**
+     * @ORM\ManyToOne(targetEntity=User::class)
+     * @ORM\JoinColumn(nullable=false)
+     */
+    private ?User $recipient = null;
+
+    // Ajoutez la méthode setRecipient
+    public function setRecipient(?User $recipient): static
+    {
+        $this->recipient = $recipient;
+        return $this;
+    }
+
+    // Ajoutez le getter correspondant
+    public function getRecipient(): ?User
+    {
+        return $this->recipient;
+    }
+
+    
 }

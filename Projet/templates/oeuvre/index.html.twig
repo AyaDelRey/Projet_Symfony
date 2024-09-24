@@ -5,41 +5,126 @@
 {% block title %}Œuvres{% endblock %}
 
 {% block body %}
-<h2>Œuvres récemment postées</h2>
-    <div class="row">
-        {% for oeuvre in oeuvres %}
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <img src="{{ asset('images/' ~ oeuvre.image) }}" class="card-img-top" alt="{{ oeuvre.titre }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ oeuvre.titre }}</h5>
-                        <p class="card-text"><strong>Artiste : </strong>{{ oeuvre.artiste }}</p>
-                        <p class="card-text"><strong>Date de création : </strong>{{ oeuvre.date ? oeuvre.date|date('d/m/Y') : 'Inconnue' }}</p>
-                        <p class="card-text"><strong>Type : </strong>{{ oeuvre.type }}</p>
-                        <p class="card-text"><strong>Technique : </strong>{{ oeuvre.technique }}</p>
-                        <p class="card-text"><strong>Lieu de création : </strong>{{ oeuvre.lieuCreation }}</p>
-                        <p class="card-text"><strong>Dimensions : </strong>{{ oeuvre.dimensions }}</p>
-                        <p class="card-text"><strong>Mouvement : </strong>{{ oeuvre.mouvement }}</p>
-                        <p class="card-text"><strong>Collection : </strong>{{ oeuvre.collection }}</p>
-                        <p class="card-text">{{ oeuvre.description }}</p>
+{# Formulaire de recherche #}
+<form id="searchForm">
+    <div>
+        <input type="text" name="keyword" placeholder="Rechercher par titre ou description...">
+    </div>
+    <div>
+        <input type="text" name="artiste" placeholder="Rechercher par artiste...">
+    </div>
+    <div>
+        <input type="number" name="year" placeholder="Rechercher par année...">
+    </div>
+    <div>
+        <label for="type">Type</label>
+        <select name="type" id="type">
+            <option value="">Tous les types</option>
+            <option value="peinture">Peinture</option>
+            <option value="sculpture">Sculpture</option>
+            <!-- Ajouter d'autres types si nécessaire -->
+        </select>
+    </div>
+    <div>
+        <label for="technique">Technique</label>
+        <select name="technique" id="technique">
+            <option value="">Toutes les techniques</option>
+            <option value="huile">Huile</option>
+            <option value="aquarelle">Aquarelle</option>
+            <!-- Ajouter d'autres techniques si nécessaire -->
+        </select>
+    </div>
+    <div>
+        <input type="text" name="lieu_creation" placeholder="Rechercher par lieu de création...">
+    </div>
+    <div>
+        <input type="text" name="dimensions" placeholder="Rechercher par dimensions...">
+    </div>
+    <div>
+        <input type="text" name="mouvement" placeholder="Rechercher par mouvement...">
+    </div>
+    <div>
+        <input type="text" name="collection" placeholder="Rechercher par collection...">
+    </div>
+    <div>
+        <button type="submit">Rechercher</button>
+    </div>
+</form>
 
-                        <!-- Bouton Ajouter/Retirer des favoris -->
-                                        {% if oeuvre.id in favoritedOeuvres %}
-                    <!-- Si l'œuvre est déjà en favori, afficher le bouton pour retirer -->
-                    <form action="{{ path('favori_toggle', {id: oeuvre.id}) }}" method="POST">
-                        <button type="submit">Retirer des favoris</button>
-                    </form>
-                {% else %}
-                    <!-- Sinon, afficher le bouton pour ajouter aux favoris -->
-                    <form action="{{ path('favori_toggle', {id: oeuvre.id}) }}" method="POST">
-                        <button type="submit">Ajouter aux favoris</button>
-                    </form>
-                {% endif %}
-                    </div>
+{# Section des résultats des œuvres #}
+<h2>Œuvres</h2>
+<div id="oeuvreList" class="row">
+    {# Cette section sera mise à jour dynamiquement par AJAX #}
+    {% for oeuvre in oeuvres %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <img src="/uploads/images/{{ oeuvre.image }}" alt="{{ oeuvre.titre }}" class="card-img-top">
+                <div class="card-body">
+                    <h5 class="card-title">{{ oeuvre.titre }}</h5>
+                    <p class="card-text"><strong>Artiste : </strong>{{ oeuvre.artiste }}</p>
+                    <p class="card-text"><strong>Date de création : </strong>{{ oeuvre.date ? oeuvre.date|date('d/m/Y') : 'Inconnue' }}</p>
+                    <p class="card-text"><strong>Type : </strong>{{ oeuvre.type }}</p>
+                    <p class="card-text"><strong>Technique : </strong>{{ oeuvre.technique }}</p>
+                    <p class="card-text"><strong>Lieu de création : </strong>{{ oeuvre.lieuCreation }}</p>
+                    <p class="card-text"><strong>Dimensions : </strong>{{ oeuvre.dimensions }}</p>
+                    <p class="card-text"><strong>Mouvement : </strong>{{ oeuvre.mouvement }}</p>
+                    <p class="card-text"><strong>Collection : </strong>{{ oeuvre.collection }}</p>
+                    <p class="card-text">{{ oeuvre.description }}</p>
                 </div>
             </div>
-        {% else %}
-            <li>Aucune œuvre trouvée.</li>
-        {% endfor %}
-    </div>
+        </div>
+    {% else %}
+        <p>Aucune œuvre n'a été trouvée.</p>
+    {% endfor %}
+</div>
+
+{# Script AJAX pour gérer la recherche sans recharger la page #}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('#searchForm').on('submit', function(event) {
+            event.preventDefault(); // Empêche le rechargement de la page
+
+            $.ajax({
+                url: '{{ path('oeuvre_index') }}',
+                type: 'GET',
+                data: $(this).serialize(), // Récupère les données du formulaire
+                success: function(data) {
+                    $('#oeuvreList').empty(); // Vide la liste actuelle des œuvres
+
+                    if (data.length === 0) {
+                        $('#oeuvreList').append('<p>Aucune œuvre trouvée.</p>');
+                    } else {
+                        // Remplir la section des œuvres avec les résultats filtrés
+                        $.each(data, function(index, oeuvre) {
+                            $('#oeuvreList').append(`
+                                <div class="col-md-4 mb-4">
+                                    <div class="card">
+                                        <img src="/uploads/images/${oeuvre.image}" alt="${oeuvre.titre}" class="card-img-top">
+                                        <div class="card-body">
+                                            <h5 class="card-title">${oeuvre.titre}</h5>
+                                            <p class="card-text"><strong>Artiste : </strong>${oeuvre.artiste}</p>
+                                            <p class="card-text"><strong>Date de création : </strong>${oeuvre.date ? new Date(oeuvre.date).toLocaleDateString() : 'Inconnue'}</p>
+                                            <p class="card-text"><strong>Type : </strong>${oeuvre.type}</p>
+                                            <p class="card-text"><strong>Technique : </strong>${oeuvre.technique}</p>
+                                            <p class="card-text"><strong>Lieu de création : </strong>${oeuvre.lieu_creation}</p>
+                                            <p class="card-text"><strong>Dimensions : </strong>${oeuvre.dimensions}</p>
+                                            <p class="card-text"><strong>Mouvement : </strong>${oeuvre.mouvement}</p>
+                                            <p class="card-text"><strong>Collection : </strong>${oeuvre.collection}</p>
+                                            <p class="card-text">${oeuvre.description}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                    }
+                },
+                error: function() {
+                    alert('Une erreur est survenue lors de la recherche.');
+                }
+            });
+        });
+    });
+</script>
+
 {% endblock %}

@@ -13,7 +13,7 @@
             {% for oeuvre in userOeuvres %}
                 <div class="col-md-4">
                     <div class="card mb-3">
-                        <img src="{{ asset('images/' ~ oeuvre.image) }}" class="card-img-top" alt="{{ oeuvre.titre }}">
+                        <img src="/uploads/images/{{ oeuvre.image }}" alt="{{ oeuvre.titre }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ oeuvre.titre }}</h5>
                             <p class="card-text">{{ oeuvre.description|slice(0, 100) }}...</p>

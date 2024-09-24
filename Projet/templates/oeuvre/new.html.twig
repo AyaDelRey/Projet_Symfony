@@ -6,20 +6,61 @@
 
 {% block body %}
     <h1>Ajouter une nouvelle œuvre</h1>
-<form method="post" enctype="multipart/form-data" data-turbo="false">
-    {{ form_start(form) }}
+
+    {# Formulaire de l'œuvre avec l'attribut id pour l'interception #}
+    {{ form_start(form, { 'attr': { 'id': 'oeuvre-form', 'novalidate': 'novalidate', 'enctype': 'multipart/form-data' } }) }}
         {{ form_row(form.titre) }}
         {{ form_row(form.artiste) }}
         {{ form_row(form.date) }}
         {{ form_row(form.type) }}
         {{ form_row(form.technique) }}
-        {{ form_row(form.lieuCreation) }}
+        {{ form_row(form.lieu_creation) }}
         {{ form_row(form.dimensions) }}
         {{ form_row(form.mouvement) }}
         {{ form_row(form.collection) }}
         {{ form_row(form.description) }}
         {{ form_row(form.image) }}
-        <button class="btn btn-primary">{{ form_row(form.save) }}</button>
     {{ form_end(form) }}
-    </form>
+
+    <div id="responseMessage"></div>
+
+    {# Script pour gérer l'envoi AJAX #}
+    <script>
+        document.getElementById('oeuvre-form').addEventListener('submit', function(event) {
+            event.preventDefault(); // Empêche la soumission classique du formulaire
+
+            let form = event.target;
+            let formData = new FormData(form);
+
+            fetch('{{ path('oeuvre_new') }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest' // Pour informer Symfony qu'il s'agit d'une requête AJAX
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                let responseMessage = document.getElementById('responseMessage');
+
+                if (data.status === 'success') {
+                    // Afficher le message de succès
+                    responseMessage.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                    
+                    // Rediriger vers la page de l'œuvre après 2 secondes
+                    setTimeout(function() {
+                        window.location.href = data.redirect;
+                    }, 2000);
+                } else {
+                    // Afficher les erreurs si la soumission échoue
+                    let errors = data.errors.join('<br>');
+                    responseMessage.innerHTML = `<div class="alert alert-danger">${errors}</div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('responseMessage').innerHTML = `<div class="alert alert-danger">Une erreur s'est produite.</div>`;
+            });
+        });
+    </script>
 {% endblock %}
