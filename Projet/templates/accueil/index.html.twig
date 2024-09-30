@@ -3,54 +3,11 @@
 {% block title %}Œuvres{% endblock %}
 
 {% block body %}
-    {% if app.user is not null %} {# Vérifie si l'utilisateur est connecté #}
+    {% if app.user is not null %}
         <!-- Barre de recherche -->
         <form id="searchForm" class="mb-4 p-4 rounded bg-white shadow-sm">
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <input type="text" class="form-control" name="keyword" placeholder="Rechercher par mots clés...">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <input type="text" class="form-control" name="titre" placeholder="Rechercher par titre...">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <input type="text" class="form-control" name="artiste" placeholder="Rechercher par artiste...">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <input type="number" class="form-control" name="year" placeholder="Rechercher par année...">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="type">Type</label>
-                    <select name="type" class="form-control" id="type">
-                        <option value="">Tous les types</option>
-                        <option value="peinture">Peinture</option>
-                        <option value="sculpture">Sculpture</option>
-                    </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="technique">Technique</label>
-                    <select name="technique" class="form-control" id="technique">
-                        <option value="">Toutes les techniques</option>
-                        <option value="huile">Huile</option>
-                        <option value="aquarelle">Aquarelle</option>
-                    </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <input type="text" class="form-control" name="lieu_creation" placeholder="Rechercher par lieu de création...">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <input type="text" class="form-control" name="dimensions" placeholder="Rechercher par dimensions...">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <input type="text" class="form-control" name="mouvement" placeholder="Rechercher par mouvement...">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <input type="text" class="form-control" name="collection" placeholder="Rechercher par collection...">
-                </div>
-            </div>
-            <div class="text-center">
-                <button type="submit" class="btn btn-primary">Rechercher</button>
-            </div>
+            <input type="text" name="keyword" placeholder="Rechercher une œuvre..." class="form-control">
+            <button type="submit" class="btn btn-primary mt-2">Rechercher</button>
         </form>
     {% else %}
         <p class="text-center">Veuillez vous connecter pour accéder à la barre de recherche.</p>
@@ -71,6 +28,29 @@
                         <p class="card-text"><strong>Technique :</strong> {{ oeuvre.technique }}</p>
                         <p class="card-text"><strong>Lieu :</strong> {{ oeuvre.lieuCreation }}</p>
                         <p class="card-text">{{ oeuvre.description }}</p>
+
+                        <!-- Bouton pour ajouter aux favoris -->
+                        <button class="btn btn-{{ app.user and app.user.isFavorite(oeuvre) ? 'danger' : 'outline-primary' }} favorite-btn"
+                                data-oeuvre-id="{{ oeuvre.id }}">
+                            {{ app.user and app.user.isFavorite(oeuvre) ? 'Retirer des favoris' : 'Ajouter aux favoris' }}
+                        </button>
+
+                        <!-- Section des commentaires -->
+                        <h6>Commentaires :</h6>
+                        {% if oeuvre.comments|length > 0 %}
+                            {% for comment in oeuvre.comments %}
+                                <p><strong>{{ comment.user.username }} :</strong> {{ comment.contenu }}</p>
+                            {% endfor %}
+                        {% else %}
+                            <p>Aucun commentaire pour cette œuvre.</p>
+                        {% endif %}
+
+                        {# <!-- Formulaire d'ajout de commentaire -->
+                        <h3>Ajouter un commentaire :</h3>
+                        <form class="comment_form" data-oeuvre-id="{{ oeuvre.id }}">
+                            {{ form_widget(comment_form) }}
+                            <button type="submit" class="btn btn-primary">Envoyer</button>
+                        </form> #}
                     </div>
                 </div>
             </div>
@@ -79,44 +59,95 @@
         {% endfor %}
     </div>
 
+    {# <!-- Script pour gérer les favoris et soumettre les commentaires en AJAX -->
     <script>
-    $(document).ready(function() {
-        $('#searchForm').on('submit', function(event) {
-            event.preventDefault();
-            $.ajax({
-                url: '{{ path('oeuvre_index') }}',
-                type: 'GET',
-                data: $(this).serialize(),
-                success: function(data) {
-                    $('#oeuvreList').empty();
-                    if (data.length === 0) {
-                        $('#oeuvreList').append('<p class="text-center">Aucune œuvre trouvée.</p>');
-                    } else {
-                        $.each(data, function(index, oeuvre) {
-                            $('#oeuvreList').append(`
-                                <div class="col-md-4 mb-4">
-                                    <div class="card">
-                                        <img src="/uploads/images/${oeuvre.image}" class="card-img-top" alt="${oeuvre.titre}">
-                                        <div class="card-body">
-                                            <h5 class="card-title">${oeuvre.titre}</h5>
-                                            <p class="card-text"><strong>Artiste :</strong> ${oeuvre.artiste}</p>
-                                            <p class="card-text"><strong>Date :</strong> ${oeuvre.date ? new Date(oeuvre.date).toLocaleDateString() : 'Inconnue'}</p>
-                                            <p class="card-text"><strong>Type :</strong> ${oeuvre.type}</p>
-                                            <p class="card-text"><strong>Technique :</strong> ${oeuvre.technique}</p>
-                                            <p class="card-text">${oeuvre.description}</p>
+        $(document).ready(function() {
+            // Gestion de la recherche AJAX
+            $('#searchForm').on('submit', function(event) {
+                event.preventDefault();
+                $.ajax({
+                    url: '{{ path('oeuvre_index') }}',
+                    type: 'GET',
+                    data: $(this).serialize(),
+                    success: function(data) {
+                        $('#oeuvreList').empty();
+                        if (data.length === 0) {
+                            $('#oeuvreList').append('<p class="text-center">Aucune œuvre trouvée.</p>');
+                        } else {
+                            $.each(data, function(index, oeuvre) {
+                                $('#oeuvreList').append(`
+                                    <div class="col-md-4 mb-4">
+                                        <div class="card">
+                                            <img src="/uploads/images/${oeuvre.image}" class="card-img-top" alt="${oeuvre.titre}">
+                                            <div class="card-body">
+                                                <h5 class="card-title">${oeuvre.titre}</h5>
+                                                <p class="card-text"><strong>Artiste :</strong> ${oeuvre.artiste}</p>
+                                                <p class="card-text"><strong>Date :</strong> ${oeuvre.date ? new Date(oeuvre.date).toLocaleDateString() : 'Inconnue'}</p>
+                                                <p class="card-text"><strong>Type :</strong> ${oeuvre.type}</p>
+                                                <p class="card-text"><strong>Technique :</strong> ${oeuvre.technique}</p>
+                                                <p class="card-text"><strong>Lieu :</strong> ${oeuvre.lieuCreation}</p>
+                                                <p class="card-text">${oeuvre.description}</p>
+                                                <button class="btn btn-outline-primary favorite-btn" data-oeuvre-id="${oeuvre.id}">Ajouter aux favoris</button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            `);
-                        });
+                                `);
+                            });
+                        }
+                    },
+                    error: function() {
+                        alert('Erreur lors de la recherche.');
                     }
-                },
-                error: function() {
-                    alert('Erreur lors de la recherche.');
-                }
+                });
+            });
+
+            // Soumission des commentaires en AJAX
+            $('.comment-form').on('submit', function(event) {
+                event.preventDefault();
+                var form = $(this);
+                var oeuvreId = form.data('oeuvre-id');
+                $.ajax({
+                    url: '{{ path('commentaire_new') }}', // Remplacez par le bon chemin pour l'ajout de commentaire
+                    type: 'POST',
+                    data: form.serialize() + '&oeuvre_id=' + oeuvreId, // Assurez-vous que le nom du paramètre est correct
+                    success: function(response) {
+                        alert('Commentaire ajouté avec succès.');
+                        // Ajoutez le nouveau commentaire à la liste
+                        $('#oeuvreList').find(`[data-oeuvre-id="${oeuvreId}"]`).closest('.card-body').find('h6').after(`
+                            <p><strong>${response.comment.user.username} :</strong> ${response.comment.contenu}</p>
+                        `);
+                        form[0].reset(); // Réinitialise le formulaire
+                    },
+                    error: function() {
+                        alert('Erreur lors de l\'ajout du commentaire.');
+                    }
+                });
+            });
+
+            // Gestion des favoris en AJAX
+            $('.favorite-btn').on('click', function(event) {
+                event.preventDefault();
+                var button = $(this);
+                var oeuvreId = button.data('oeuvre-id');
+                $.ajax({
+                    // url: '{{ path('favori_toggle', { id: oeuvre.id }) }}', // Assurez-vous que cette route existe
+                    type: 'POST',
+                    data: { oeuvre_id: oeuvreId },
+                    success: function(response) {
+                        if (response.isFavorite) {
+                            button.removeClass('btn-outline-primary').addClass('btn-danger');
+                            button.text('Retirer des favoris');
+                        } else {
+                            button.removeClass('btn-danger').addClass('btn-outline-primary');
+                            button.text('Ajouter aux favoris');
+                        }
+                    },
+                    error: function() {
+                        alert('Erreur lors de la mise à jour du favori.');
+                    }
+                });
             });
         });
-    });
-    </script>
+    </script> #}
 
 {% endblock %}

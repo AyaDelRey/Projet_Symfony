@@ -1,5 +1,4 @@
 <?php
-// src/Controller/OeuvreController.php
 
 namespace App\Controller;
 
@@ -8,6 +7,7 @@ use App\Entity\Comment;
 use App\Form\OeuvreType;
 use App\Form\CommentType;
 use App\Repository\OeuvreRepository;
+use App\Repository\CommentRepository;
 use App\Repository\FavoriteRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,10 +22,31 @@ use Symfony\Component\HttpFoundation\File\Exception\FileException;
 #[Route('/oeuvres')]
 class OeuvreController extends AbstractController
 {
-    #[Route('/', name: 'oeuvre_index', methods: ['GET'])]
-    public function index(Request $request, OeuvreRepository $oeuvreRepository, FavoriteRepository $favoriteRepository, UserInterface $user): Response
+    #[Route('/', name: 'oeuvre_index', methods: ['GET', 'POST'])]
+    public function index(Request $request, OeuvreRepository $oeuvreRepository, FavoriteRepository $favoriteRepository, UserInterface $user, CommentRepository $commentRepository): Response
     {
-        // Si la requête est une requête AJAX (pour la recherche dynamique)
+        // Création du formulaire pour ajouter un commentaire
+        $comment = new Comment();
+        $form = $this->createForm(CommentType::class, $comment);
+    
+        // Gestion de la soumission du formulaire de commentaire
+        $form->handleRequest($request);
+        if ($form->isSubmitted() && $form->isValid()) {
+            $data = $form->getData();
+            $oeuvreId = $request->request->get('oeuvre_id'); // Obtenir l'ID de l'œuvre
+    
+            // Trouver l'œuvre associée
+            $oeuvre = $oeuvreRepository->find($oeuvreId);
+            if ($oeuvre) {
+                $comment->setUser($user); // Associer l'utilisateur connecté
+                $comment->setOeuvre($oeuvre); // Associer le commentaire à l'œuvre
+                $commentRepository->save($comment, true); // Enregistrer le commentaire
+            }
+    
+            return $this->redirectToRoute('oeuvre_index'); // Rediriger après l'ajout
+        }
+    
+        // Gestion de la recherche AJAX
         if ($request->isXmlHttpRequest()) {
             $keyword = $request->query->get('keyword');
             $titre = $request->query->get('titre');
@@ -37,11 +58,22 @@ class OeuvreController extends AbstractController
             $dimensions = $request->query->get('dimensions');
             $mouvement = $request->query->get('mouvement');
             $collection = $request->query->get('collection');
-
-            // Appelle le repository pour trouver les œuvres qui correspondent aux critères
-            $oeuvres = $oeuvreRepository->findByFilters($keyword, $titre, $artiste, $year, $type, $technique, $lieu_creation, $dimensions, $mouvement, $collection);
-
-            // Prépare les données pour la réponse JSON
+    
+            // Rechercher les œuvres selon les filtres
+            $oeuvres = $oeuvreRepository->findByFilters(
+                $keyword,
+                $titre,
+                $artiste,
+                $year,
+                $type,
+                $technique,
+                $lieu_creation,
+                $dimensions,
+                $mouvement,
+                $collection
+            );
+    
+            // Créer une réponse JSON pour les œuvres
             $oeuvresData = [];
             foreach ($oeuvres as $oeuvre) {
                 $oeuvresData[] = [
@@ -56,25 +88,28 @@ class OeuvreController extends AbstractController
                     'mouvement' => $oeuvre->getMouvement(),
                     'collection' => $oeuvre->getCollection(),
                     'image' => $oeuvre->getImage(),
+                    'comments' => $oeuvre->getComments(), // Récupération des commentaires
                 ];
             }
-
+    
             return new JsonResponse($oeuvresData);
         }
-
-        // Récupérer toutes les œuvres pour l'affichage classique
+    
+        // Récupérer toutes les œuvres avec leurs commentaires
         $oeuvres = $oeuvreRepository->findAll();
-
-        // Récupérer les œuvres mises en favoris par l'utilisateur
+    
+        // Récupérer les œuvres favorites de l'utilisateur
         $favoriteOeuvres = $favoriteRepository->findBy(['user' => $user]);
-
+    
         return $this->render('oeuvre/index.html.twig', [
             'oeuvres' => $oeuvres,
             'favoriteOeuvres' => $favoriteOeuvres,
+            'comment_form' => $form->createView(), // Passer le formulaire au template
         ]);
     }
+    
 
-    #[Route('/oeuvre/new', name: 'oeuvre_new', methods: ['GET', 'POST'])]
+    #[Route('/new', name: 'oeuvre_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager, SluggerInterface $slugger, UserInterface $user): Response
     {
         $oeuvre = new Oeuvre();
@@ -95,23 +130,21 @@ class OeuvreController extends AbstractController
                     );
                     $oeuvre->setImage($newFilename);
                 } catch (FileException $e) {
-                    return new JsonResponse(['status' => 'error', 'message' => 'Erreur lors de l\'upload du fichier image.'], 500);
+                    return new JsonResponse(['status' => 'error', 'message' => 'Erreur lors de l\'upload de l\'image.'], 500);
                 }
             }
 
             $oeuvre->setAuthor($user);
-            
-            // Vérifiez si la date est valide et créez un DateTime
+
             if ($oeuvre->getDate()) {
-                $year = $oeuvre->getDate()->format('Y'); // Obtenez l'année
-                $dateTime = \DateTime::createFromFormat('Y', $year); // Créez un nouvel objet DateTime
-                $oeuvre->setDate($dateTime); // Affectez-le à l'œuvre
+                $year = $oeuvre->getDate()->format('Y');
+                $dateTime = \DateTime::createFromFormat('Y', $year);
+                $oeuvre->setDate($dateTime);
             }
 
             $entityManager->persist($oeuvre);
             $entityManager->flush();
 
-            // Retourne une réponse JSON en cas de succès
             return new JsonResponse([
                 'status' => 'success',
                 'message' => 'Œuvre ajoutée avec succès!',
@@ -119,7 +152,6 @@ class OeuvreController extends AbstractController
             ], 200);
         }
 
-        // Si la requête est AJAX mais que le formulaire est invalide, on retourne les erreurs en JSON
         if ($request->isXmlHttpRequest()) {
             $errors = [];
             foreach ($form->getErrors(true, true) as $error) {
@@ -129,19 +161,15 @@ class OeuvreController extends AbstractController
             return new JsonResponse(['status' => 'error', 'errors' => $errors], 400);
         }
 
-        // Pour les requêtes non AJAX (affichage classique du formulaire)
         return $this->render('oeuvre/new.html.twig', [
             'form' => $form->createView(),
         ]);
     }
 
-    #[Route('/mes-oeuvres', name: 'app_user_oeuvres')]
+    #[Route('/mes-oeuvres', name: 'app_user_oeuvres', methods: ['GET'])]
     public function userOeuvres(OeuvreRepository $oeuvreRepository, FavoriteRepository $favoriteRepository, UserInterface $user): Response
     {
-        // Récupérer les œuvres postées par l'utilisateur connecté
         $userOeuvres = $oeuvreRepository->findBy(['author' => $user]);
-
-        // Récupérer les œuvres mises en favoris par l'utilisateur
         $favoriteOeuvres = $favoriteRepository->findBy(['user' => $user]);
 
         return $this->render('oeuvre/user_oeuvres.html.twig', [
@@ -150,14 +178,15 @@ class OeuvreController extends AbstractController
         ]);
     }
 
-    #[Route('/oeuvre/{id}', name: 'oeuvre_show', methods: ['GET', 'POST'])]
+    #[Route('/{id}', name: 'oeuvre_show', methods: ['GET', 'POST'])]
     public function show(Oeuvre $oeuvre, Request $request, EntityManagerInterface $entityManager): Response
     {
         $comment = new Comment();
         $form = $this->createForm(CommentType::class, $comment);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
+        // Vérifier si la requête est AJAX
+        if ($request->isXmlHttpRequest() && $form->isSubmitted() && $form->isValid()) {
             $comment->setOeuvre($oeuvre);
             $comment->setUser($this->getUser());
             $comment->setCreatedAt(new \DateTime());
@@ -165,13 +194,22 @@ class OeuvreController extends AbstractController
             $entityManager->persist($comment);
             $entityManager->flush();
 
-            // Redirection pour éviter la resoumission du formulaire
-            return $this->redirectToRoute('oeuvre_show', ['id' => $oeuvre->getId()]);
+            return new JsonResponse([
+                'status' => 'success',
+                'comment' => [
+                    'contenu' => $comment->getContenu(),
+                    'user' => [
+                        'username' => $this->getUser()->getUserIdentifier(),
+                    ],
+                    'createdAt' => $comment->getCreatedAt()->format('Y-m-d H:i:s'), // Date de création
+                ],
+            ]);
         }
 
+        // Afficher la vue si ce n'est pas une requête AJAX
         return $this->render('oeuvre/show.html.twig', [
             'oeuvre' => $oeuvre,
-            'form' => $form->createView(),
+            'comment_form' => $form->createView(),
             'comments' => $oeuvre->getComments(),
         ]);
     }
@@ -180,15 +218,15 @@ class OeuvreController extends AbstractController
     public function newComment(Request $request, EntityManagerInterface $entityManager): Response
     {
         $user = $this->getUser();
-        $content = $request->request->get('content');
+        $contenu = $request->request->get('contenu');
         $oeuvreId = $request->request->get('oeuvreId');
 
-        if ($user && $content) {
+        if ($user && $contenu) {
             $oeuvre = $entityManager->getRepository(Oeuvre::class)->find($oeuvreId);
-            
+
             if ($oeuvre) {
                 $comment = new Comment();
-                $comment->setContenu($content);
+                $comment->setContenu($contenu);
                 $comment->setOeuvre($oeuvre);
                 $comment->setUser($user);
                 $comment->setCreatedAt(new \DateTime());
@@ -196,13 +234,13 @@ class OeuvreController extends AbstractController
                 $entityManager->persist($comment);
                 $entityManager->flush();
 
-                // Retourner une réponse JSON pour le commentaire nouvellement créé
                 return new JsonResponse([
                     'comment' => [
                         'contenu' => $comment->getContenu(),
                         'user' => [
                             'username' => $user->getUserIdentifier(),
                         ],
+                        'createdAt' => $comment->getCreatedAt()->format('Y-m-d H:i:s'), // Date de création
                     ],
                 ]);
             }

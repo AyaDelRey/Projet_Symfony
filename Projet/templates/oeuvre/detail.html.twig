@@ -1,0 +1,49 @@
+{# templates/oeuvre/detail.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Détails de l'œuvre: {{ oeuvre.titre }}{% endblock %}
+
+{% block body %}
+<div class="container my-4">
+    <h1>{{ oeuvre.titre }}</h1>
+    <div class="row">
+        <div class="col-md-6">
+            <img src="/uploads/images/{{ oeuvre.image }}" alt="{{ oeuvre.titre }}" class="img-fluid mb-3">
+        </div>
+        <div class="col-md-6">
+            <p><strong>Artiste:</strong> {{ oeuvre.artiste }}</p>
+            <p><strong>Date de création:</strong> {{ oeuvre.date ? oeuvre.date|date('d/m/Y') : 'Non spécifiée' }}</p>
+            <p><strong>Type:</strong> {{ oeuvre.type }}</p>
+            <p><strong>Technique:</strong> {{ oeuvre.technique }}</p>
+            <p><strong>Lieu de création:</strong> {{ oeuvre.lieu_creation }}</p>
+            <p><strong>Dimensions:</strong> {{ oeuvre.dimensions }}</p>
+            <p><strong>Mouvement:</strong> {{ oeuvre.mouvement }}</p>
+            <p><strong>Collection:</strong> {{ oeuvre.collection }}</p>
+            <p><strong>Description:</strong> {{ oeuvre.description }}</p>
+        </div>
+    </div>
+
+    <hr>
+
+    <h3>Commentaires</h3>
+    {% if oeuvre.comments|length > 0 %}
+        <ul>
+            {% for comment in oeuvre.comments %}
+                <li>
+                    <strong>{{ comment.author.username }}:</strong> {{ comment.contenu }} <br>
+                    <small>Posté le {{ comment.createdAt|date('d/m/Y à H:i') }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Aucun commentaire pour cette œuvre.</p>
+    {% endif %}
+
+    <hr>
+
+    <h3>Favoris</h3>
+    <p>Cette œuvre a été ajoutée à {{ oeuvre.favorites|length }} favoris.</p>
+
+    <a href="{{ path('app_user_oeuvres') }}" class="btn btn-secondary mt-3">Retour aux œuvres</a>
+</div>
+{% endblock %}

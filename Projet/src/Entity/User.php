@@ -300,5 +300,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    
+    // Ajoutez ici la méthode isFavorite
+    public function isFavorite(Oeuvre $oeuvre): bool
+    {
+        foreach ($this->favorites as $favorite) {
+            if ($favorite->getOeuvre() === $oeuvre) {
+                return true; // L'œuvre est un favori
+            }
+        }
+        return false; // L'œuvre n'est pas un favori
+    }
 }
