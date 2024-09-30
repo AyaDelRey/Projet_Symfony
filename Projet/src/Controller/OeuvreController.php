@@ -28,17 +28,18 @@ class OeuvreController extends AbstractController
         // Si la requête est une requête AJAX (pour la recherche dynamique)
         if ($request->isXmlHttpRequest()) {
             $keyword = $request->query->get('keyword');
+            $titre = $request->query->get('titre');
             $artiste = $request->query->get('artiste');
             $year = $request->query->get('year');
             $type = $request->query->get('type');
             $technique = $request->query->get('technique');
-            $lieuCreation = $request->query->get('lieu_creation');
+            $lieu_creation = $request->query->get('lieu_creation');
             $dimensions = $request->query->get('dimensions');
             $mouvement = $request->query->get('mouvement');
             $collection = $request->query->get('collection');
 
             // Appelle le repository pour trouver les œuvres qui correspondent aux critères
-            $oeuvres = $oeuvreRepository->findByFilters($keyword, $artiste, $year, $type, $technique, $lieuCreation, $dimensions, $mouvement, $collection);
+            $oeuvres = $oeuvreRepository->findByFilters($keyword, $titre, $artiste, $year, $type, $technique, $lieu_creation, $dimensions, $mouvement, $collection);
 
             // Prépare les données pour la réponse JSON
             $oeuvresData = [];
@@ -99,6 +100,14 @@ class OeuvreController extends AbstractController
             }
 
             $oeuvre->setAuthor($user);
+            
+            // Vérifiez si la date est valide et créez un DateTime
+            if ($oeuvre->getDate()) {
+                $year = $oeuvre->getDate()->format('Y'); // Obtenez l'année
+                $dateTime = \DateTime::createFromFormat('Y', $year); // Créez un nouvel objet DateTime
+                $oeuvre->setDate($dateTime); // Affectez-le à l'œuvre
+            }
+
             $entityManager->persist($oeuvre);
             $entityManager->flush();
 

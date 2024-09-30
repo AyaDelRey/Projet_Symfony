@@ -16,84 +16,85 @@ class OeuvreRepository extends ServiceEntityRepository
         parent::__construct($registry, Oeuvre::class);
     }
 
-    //    /**
-    //     * @return Oeuvre[] Returns an array of Oeuvre objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('o')
-    //            ->andWhere('o.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('o.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function findByFilters(
+        ?string $keyword, 
+        ?string $artiste, 
+        ?string $year, 
+        ?string $type, 
+        ?string $technique, 
+        ?string $lieu_creation, 
+        ?string $dimensions, 
+        ?string $mouvement, 
+        ?string $collection
+    ): array {
+        $qb = $this->createQueryBuilder('o');
 
-    //    public function findOneBySomeField($value): ?Oeuvre
-    //    {
-    //        return $this->createQueryBuilder('o')
-    //            ->andWhere('o.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        // Recherche globale avec le mot-clé (insensible à la casse et correspondance partielle)
+        if ($keyword) {
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    'LOWER(o.titre) LIKE :keyword',
+                    'LOWER(o.description) LIKE :keyword',
+                    'LOWER(o.artiste) LIKE :keyword',
+                    'LOWER(o.type) LIKE :keyword',
+                    'LOWER(o.technique) LIKE :keyword',
+                    'LOWER(o.lieu_creation) LIKE :keyword',
+                    'LOWER(o.dimensions) LIKE :keyword',
+                    'LOWER(o.mouvement) LIKE :keyword',
+                    'LOWER(o.collection) LIKE :keyword'
+                )
+            )
+            ->setParameter('keyword', '%' . strtolower($keyword) . '%');
+        }
 
-// src/Repository/OeuvreRepository.php
+        // Filtre par artiste (insensible à la casse et correspondance partielle)
+        if ($artiste) {
+            $qb->andWhere('LOWER(o.artiste) LIKE :artiste')
+                ->setParameter('artiste', '%' . strtolower($artiste) . '%');
+        }
 
-public function findByFilters(?string $keyword, ?string $artiste, ?string $year, ?string $type, ?string $technique, ?string $lieuCreation, ?string $dimensions, ?string $mouvement, ?string $collection): array
-{
-    $qb = $this->createQueryBuilder('o');
+        // Filtre par année (extraction de l'année)
+        if ($year) {
+            $qb->andWhere('YEAR(o.date) = :year')
+                ->setParameter('year', $year);
+        }
 
-    if ($keyword) {
-        $qb->andWhere('o.titre LIKE :keyword OR o.description LIKE :keyword')
-            ->setParameter('keyword', '%' . $keyword . '%');
+        // Filtre par type exact (insensible à la casse)
+        if ($type) {
+            $qb->andWhere('LOWER(o.type) = :type')
+                ->setParameter('type', strtolower($type));
+        }
+
+        // Filtre par technique (insensible à la casse et correspondance partielle)
+        if ($technique) {
+            $qb->andWhere('LOWER(o.technique) LIKE :technique')
+                ->setParameter('technique', '%' . strtolower($technique) . '%');
+        }
+
+        // Filtre par lieu de création (insensible à la casse et correspondance partielle)
+        if ($lieu_creation) {
+            $qb->andWhere('LOWER(o.lieu_creation) LIKE :lieu_creation')
+                ->setParameter('lieu_creation', '%' . strtolower($lieu_creation) . '%');
+        }
+
+        // Filtre par dimensions (insensible à la casse et correspondance partielle)
+        if ($dimensions) {
+            $qb->andWhere('LOWER(o.dimensions) LIKE :dimensions')
+                ->setParameter('dimensions', '%' . strtolower($dimensions) . '%');
+        }
+
+        // Filtre par mouvement (insensible à la casse et correspondance partielle)
+        if ($mouvement) {
+            $qb->andWhere('LOWER(o.mouvement) LIKE :mouvement')
+                ->setParameter('mouvement', '%' . strtolower($mouvement) . '%');
+        }
+
+        // Filtre par collection (insensible à la casse et correspondance partielle)
+        if ($collection) {
+            $qb->andWhere('LOWER(o.collection) LIKE :collection')
+                ->setParameter('collection', '%' . strtolower($collection) . '%');
+        }
+
+        return $qb->getQuery()->getResult();
     }
-
-    if ($artiste) {
-        $qb->andWhere('o.artiste LIKE :artiste')
-            ->setParameter('artiste', '%' . $artiste . '%');
-    }
-
-    if ($year) {
-        $qb->andWhere('YEAR(o.date) = :year')
-            ->setParameter('year', $year);
-    }
-
-    if ($type) {
-        $qb->andWhere('o.type = :type')
-            ->setParameter('type', $type);
-    }
-
-    if ($technique) {
-        $qb->andWhere('o.technique = :technique')
-            ->setParameter('technique', $technique);
-    }
-
-    if ($lieuCreation) {
-        $qb->andWhere('o.lieuCreation LIKE :lieuCreation')
-            ->setParameter('lieuCreation', '%' . $lieuCreation . '%');
-    }
-
-    if ($dimensions) {
-        $qb->andWhere('o.dimensions LIKE :dimensions')
-            ->setParameter('dimensions', '%' . $dimensions . '%');
-    }
-
-    if ($mouvement) {
-        $qb->andWhere('o.mouvement LIKE :mouvement')
-            ->setParameter('mouvement', '%' . $mouvement . '%');
-    }
-
-    if ($collection) {
-        $qb->andWhere('o.collection LIKE :collection')
-            ->setParameter('collection', '%' . $collection . '%');
-    }
-
-    return $qb->getQuery()->getResult();
-}
-
-
 }

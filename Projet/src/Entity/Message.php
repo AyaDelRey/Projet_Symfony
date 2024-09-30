@@ -1,9 +1,9 @@
 <?php
+// src/Entity/Message.php
 
 namespace App\Entity;
 
 use App\Repository\MessageRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: MessageRepository::class)]
@@ -14,23 +14,48 @@ class Message
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[ORM\Column(type: 'text')]
     private ?string $content = null;
 
-    #[ORM\ManyToOne(inversedBy: 'sentMessages')]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'sentMessages')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $sender = null;
 
-    #[ORM\ManyToOne(inversedBy: 'receivedMessages')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'receivedMessages')]
+    #[ORM\JoinColumn(nullable: false, name: 'receiver_id')]
     private ?User $receiver = null;
 
     #[ORM\Column(type: 'datetime')]
-    private \DateTimeImmutable $createdAt;
+    private ?\DateTimeInterface $sentAt = null;
 
-    public function __construct()
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $receivedAt = null;
+
+    #[ORM\ManyToOne(inversedBy: 'messages')]
+    private ?Conversation $conversation = null;
+
+    // Getter and setter for receiver
+    public function getReceiver(): ?User
     {
-        $this->createdAt = new \DateTimeImmutable();
+        return $this->receiver;
+    }
+
+    public function setReceiver(?User $receiver): static
+    {
+        $this->receiver = $receiver;
+        return $this;
+    }
+
+    // Getter and setter for sender
+    public function getSender(): ?User
+    {
+        return $this->sender;
+    }
+
+    public function setSender(?User $sender): static
+    {
+        $this->sender = $sender;
+        return $this;
     }
 
     public function getId(): ?int
@@ -46,64 +71,40 @@ class Message
     public function setContent(string $content): static
     {
         $this->content = $content;
-
         return $this;
     }
 
-    public function getSender(): ?User
+    public function getSentAt(): ?\DateTimeInterface
     {
-        return $this->sender;
+        return $this->sentAt;
     }
 
-    public function setSender(?User $sender): static
+    public function setSentAt(\DateTimeInterface $sentAt): static
     {
-        $this->sender = $sender;
-
+        $this->sentAt = $sentAt;
         return $this;
     }
 
-    public function getReceiver(): ?User
+    public function getReceivedAt(): ?\DateTimeInterface
     {
-        return $this->receiver;
+        return $this->receivedAt;
     }
 
-    public function setReceiver(?User $receiver): static
+    public function setReceivedAt(?\DateTimeInterface $receivedAt): static
     {
-        $this->receiver = $receiver;
-
+        $this->receivedAt = $receivedAt;
         return $this;
     }
 
-    public function getCreatedAt(): \DateTimeImmutable
+    public function getConversation(): ?Conversation
     {
-        return $this->createdAt;
+        return $this->conversation;
     }
 
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    public function setConversation(?Conversation $conversation): static
     {
-        $this->createdAt = $createdAt;
+        $this->conversation = $conversation;
 
         return $this;
     }
-
-        /**
-     * @ORM\ManyToOne(targetEntity=User::class)
-     * @ORM\JoinColumn(nullable=false)
-     */
-    private ?User $recipient = null;
-
-    // Ajoutez la méthode setRecipient
-    public function setRecipient(?User $recipient): static
-    {
-        $this->recipient = $recipient;
-        return $this;
-    }
-
-    // Ajoutez le getter correspondant
-    public function getRecipient(): ?User
-    {
-        return $this->recipient;
-    }
-
-    
 }

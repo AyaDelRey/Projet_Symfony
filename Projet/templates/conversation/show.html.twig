@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Conversation{% endblock %}
+
+{% block body %}
+    <h1>Conversation</h1>
+
+    <div class="list-group">
+        {% for message in messages %}
+            <div class="list-group-item">
+                <strong>{{ message.sender.username }}:</strong> {{ message.content }}
+                <small class="text-muted">{{ message.sentAt|date('d-m-Y H:i') }}</small>
+            </div>
+        {% else %}
+            <div class="list-group-item">Aucun message dans cette conversation.</div>
+        {% endfor %}
+    </div>
+{% endblock %}

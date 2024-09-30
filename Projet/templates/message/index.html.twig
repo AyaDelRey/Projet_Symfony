@@ -1,20 +1,35 @@
+{# templates/message/index.html.twig #}
+
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello MessageController!{% endblock %}
+{% block title %}Vos messages{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+    <h1>Vos messages</h1>
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
-    This friendly message is coming from:
+    <h2>Messages envoyés</h2>
     <ul>
-        <li>Your controller at <code>C:/xampp/htdocs/Catalogue2/ProjetCatSymfony/src/Controller/MessageController.php</code></li>
-        <li>Your template at <code>C:/xampp/htdocs/Catalogue2/ProjetCatSymfony/templates/message/index.html.twig</code></li>
+        {% for message in sentMessages %}
+            <li>
+                À {{ message.receiver.username }} : {{ message.content }}
+                <small class="text-muted">{{ message.sentAt|date('d-m-Y H:i') }}</small>
+            </li>
+        {% else %}
+            <li>Vous n'avez pas encore envoyé de message.</li>
+        {% endfor %}
     </ul>
-</div>
+
+    <h2>Messages reçus</h2>
+    <ul>
+        {% for message in receivedMessages %}
+            <li>
+                De {{ message.sender.username }} : {{ message.content }}
+                <small class="text-muted">{{ message.sentAt|date('d-m-Y H:i') }}</small>
+            </li>
+        {% else %}
+            <li>Vous n'avez pas encore reçu de message.</li>
+        {% endfor %}
+    </ul>
+
+    <a href="{{ path('message_new') }}">Envoyer un nouveau message</a>
 {% endblock %}

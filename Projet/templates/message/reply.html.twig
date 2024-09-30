@@ -1,0 +1,21 @@
+{# templates/message/reply.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Répondre au message{% endblock %}
+
+{% block body %}
+    <h1>Répondre au message</h1>
+
+    <div>
+        <strong>De:</strong> {{ originalMessage.sender.username }}<br>
+        <strong>À:</strong> {{ originalMessage.receiver.username }}<br>
+        <strong>Message:</strong> {{ originalMessage.content }}<br>
+    </div>
+
+    {{ form_start(form) }}
+        {{ form_widget(form) }}
+    {{ form_end(form) }}
+
+    <a href="{{ path('message_list') }}">Retourner à la liste des messages</a>
+{% endblock %}

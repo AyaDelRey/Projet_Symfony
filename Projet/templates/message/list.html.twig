@@ -1,35 +1,33 @@
 {# templates/message/list.html.twig #}
+
 {% extends 'base.html.twig' %}
 
-{% block title %}Mes Messages{% endblock %}
+{% block title %}Vos conversations{% endblock %}
 
 {% block body %}
-<h2>Mes Messages</h2>
+    <h1>Vos conversations</h1>
 
-<h3>Messages envoyés</h3>
-<ul>
-    {% for message in messagesSent %}
-        <li>
-            <strong>À : </strong>{{ message.recipient.username }} <br>
-            <strong>Message : </strong>{{ message.content }} <br>
-            <strong>Date : </strong>{{ message.createdAt|date('d/m/Y H:i') }}
-        </li>
+    {# Ajout d'un bouton pour envoyer un nouveau message #}
+    <div class="mb-3">
+        <a href="{{ path('user_list') }}" class="btn btn-success">Envoyer un nouveau message</a>
+    </div>
+
+    {% if conversations is empty %}
+        <p>Vous n'avez pas de messages.</p>
     {% else %}
-        <li>Aucun message envoyé.</li>
-    {% endfor %}
-</ul>
-
-<h3>Messages reçus</h3>
-<ul>
-    {% for message in messagesReceived %}
-        <li>
-            <strong>De : </strong>{{ message.sender.username }} <br>
-            <strong>Message : </strong>{{ message.content }} <br>
-            <strong>Date : </strong>{{ message.createdAt|date('d/m/Y H:i') }}
-        </li>
-    {% else %}
-        <li>Aucun message reçu.</li>
-    {% endfor %}
-</ul>
-
+        <div class="list-group">
+            {% for conversation in conversations %}
+                <div class="list-group-item">
+                    <h5 class="mb-1">{{ conversation.user.username }}</h5>
+                    <p class="mb-1">
+                        {% for message in conversation.messages %}
+                            <strong>{% if message.sender == app.user %}Vous{% else %}{{ message.sender.username }}{% endif %}:</strong>
+                            {{ message.content }}<br>
+                        {% endfor %}
+                    </p>
+                    <a href="{{ path('message_new', {'receiverId': conversation.user.id}) }}" class="btn btn-primary">Répondre</a>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}

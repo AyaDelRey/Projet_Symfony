@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Entity;
 
 use App\Entity\Oeuvre;
@@ -29,10 +28,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\OneToMany(mappedBy: 'author', targetEntity: Oeuvre::class)]
     private Collection $oeuvres;
-
-
-
-
 
     #[ORM\OneToMany(mappedBy: 'sender', targetEntity: Message::class)]
     private Collection $sentMessages;
@@ -64,10 +59,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Favorite::class, mappedBy: 'user')]
     private Collection $favorites;
 
-    /**
-     * @var Collection<int, Message>
-     */
+    #[ORM\Column(length: 180, unique: true)]
+    private ?string $username = null;
 
+    /**
+     * @var Collection<int, Conversation>
+     */
+    #[ORM\ManyToMany(targetEntity: Conversation::class, mappedBy: 'participants')]
+    private Collection $conversations;
 
     public function __construct()
     {
@@ -76,6 +75,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->favorites = new ArrayCollection();
         $this->sentMessages = new ArrayCollection();
         $this->receivedMessages = new ArrayCollection();
+        $this->conversations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -95,33 +95,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
     public function getUserIdentifier(): string
     {
         return (string) $this->email;
     }
 
-    /**
-     * @see UserInterface
-     *
-     * @return list<string>
-     */
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
     }
 
-    /**
-     * @param list<string> $roles
-     */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
@@ -129,9 +115,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
     public function getPassword(): ?string
     {
         return $this->password;
@@ -144,18 +127,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @see UserInterface
-     */
     public function eraseCredentials(): void
     {
-        // If you store any temporary, sensitive data on the user, clear it here
-        // $this->plainPassword = null;
+        // Effacer les informations sensibles
     }
 
-    /**
-     * @return Collection<int, Oeuvre>
-     */
     public function getOeuvres(): Collection
     {
         return $this->oeuvres;
@@ -165,7 +141,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->oeuvres->contains($oeuvre)) {
             $this->oeuvres->add($oeuvre);
-            //$oeuvre->setArtiste(string);
         }
 
         return $this;
@@ -174,7 +149,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeOeuvre(Oeuvre $oeuvre): static
     {
         if ($this->oeuvres->removeElement($oeuvre)) {
-            // set the owning side to null (unless already changed)
             if ($oeuvre->getArtiste() === $this) {
                 $oeuvre->setArtiste(null);
             }
@@ -183,9 +157,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, Comment>
-     */
     public function getComments(): Collection
     {
         return $this->comments;
@@ -204,7 +175,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeComment(Comment $comment): static
     {
         if ($this->comments->removeElement($comment)) {
-            // set the owning side to null (unless already changed)
             if ($comment->getUser() === $this) {
                 $comment->setUser(null);
             }
@@ -213,9 +183,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, Favorite>
-     */
     public function getFavorites(): Collection
     {
         return $this->favorites;
@@ -234,7 +201,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeFavorite(Favorite $favorite): static
     {
         if ($this->favorites->removeElement($favorite)) {
-            // set the owning side to null (unless already changed)
             if ($favorite->getUser() === $this) {
                 $favorite->setUser(null);
             }
@@ -243,9 +209,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, Message>
-     */
     public function getSentMessages(): Collection
     {
         return $this->sentMessages;
@@ -264,7 +227,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeSentMessage(Message $message): static
     {
         if ($this->sentMessages->removeElement($message)) {
-            // set the owning side to null (unless already changed)
             if ($message->getSender() === $this) {
                 $message->setSender(null);
             }
@@ -273,16 +235,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @return Collection<int, Message>
-     */
-
+    public function getReceivedMessages(): Collection
+    {
+        return $this->receivedMessages;
+    }
 
     public function addReceivedMessage(Message $message): static
     {
         if (!$this->receivedMessages->contains($message)) {
             $this->receivedMessages->add($message);
-            $message->setReceiver($this);
+            $message->setReceiver($this);  // Utilisation de `setReceiver`
         }
 
         return $this;
@@ -291,8 +253,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeReceivedMessage(Message $message): static
     {
         if ($this->receivedMessages->removeElement($message)) {
-            // set the owning side to null (unless already changed)
-            if ($message->getReceiver() === $this) {
+            if ($message->getReceiver() === $this) {  // Utilisation de `getReceiver`
                 $message->setReceiver(null);
             }
         }
@@ -300,24 +261,44 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getReceivedMessages(): Collection
-{
-    return $this->receivedMessages;
-}
-#[ORM\Column(length: 180, unique: true)]
-private ?string $username = null;
+    public function getUsername(): ?string
+    {
+        return $this->username;
+    }
 
-public function getUsername(): ?string
-{
-    return $this->username;
-}
+    public function setUsername(string $username): static
+    {
+        $this->username = $username;
 
-public function setUsername(string $username): static
-{
-    $this->username = $username;
+        return $this;
+    }
 
-    return $this;
-}
+    /**
+     * @return Collection<int, Conversation>
+     */
+    public function getConversations(): Collection
+    {
+        return $this->conversations;
+    }
 
+    public function addConversation(Conversation $conversation): static
+    {
+        if (!$this->conversations->contains($conversation)) {
+            $this->conversations->add($conversation);
+            $conversation->addParticipant($this);
+        }
 
+        return $this;
+    }
+
+    public function removeConversation(Conversation $conversation): static
+    {
+        if ($this->conversations->removeElement($conversation)) {
+            $conversation->removeParticipant($this);
+        }
+
+        return $this;
+    }
+
+    
 }

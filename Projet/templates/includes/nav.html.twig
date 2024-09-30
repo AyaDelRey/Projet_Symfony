@@ -1,6 +1,4 @@
-
-
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="{{ path('app_accueil') }}">Catalogue</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -11,25 +9,29 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ path('app_accueil') }}">Accueil</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ path('oeuvre_index') }}">Œuvres</a>
-                </li>
-
-                {# Afficher "Connexion" si l'utilisateur n'est pas connecté #}
                 {% if app.user is null %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ path('app_login') }}">Connexion</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="{{ path('app_register') }}">Inscription</a>
                     </li>
                 {% else %}
-                    {# Afficher "Déconnexion" si l'utilisateur est connecté #}
-                    <ul class="nav-item">
-                        <li><a class="nav-link" href="{{ path('oeuvre_new') }}">Ajouter Oeuvre</a></li>
-                        <li><a href="{{ path('app_user_oeuvres') }}">Mes Œuvres</a></li>
-                        <li><a href="{{ path('message_list') }}">Messages</a></li>
-                        {# <li><a href="{{ path('message_new', { 'recipientId': User.id }) }}">Envoyer un message</a></li> #}
-                        <li><a class="nav-link" href="{{ path('app_logout') }}">Déconnexion</a></li>
-                    </ul>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ path('oeuvre_new') }}">Ajouter Oeuvre</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ path('app_user_oeuvres') }}">Mes Œuvres</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ path('message_list') }}">Messages</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ path('user_list') }}">Liste Utilisateurs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ path('app_logout') }}">Déconnexion</a>
+                    </li>
                 {% endif %}
             </ul>
         </div>
